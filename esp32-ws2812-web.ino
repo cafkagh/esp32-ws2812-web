@@ -24,6 +24,10 @@ MatchState ms;
 
 // 0 关 1开
 int state = 0;
+
+int relay = 0;
+int relay_gpio = 15;
+
 // 1彩虹 2滚动彩虹
 int type = 1;
 int lednum = 60;
@@ -68,7 +72,7 @@ void gpioSetup(int gpioNum, int gpioMode, int gpioVal) {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"  // It's noisy here with `-Wall`
-strand_t strand = {.rmtChannel = 0, .gpioNum = 27, .ledType = LED_WS2812B_V2, .brightLimit = 64, .numPixels = 240};
+strand_t strand = {.rmtChannel = 0, .gpioNum = 16, .ledType = LED_WS2812B_V2, .brightLimit = 64, .numPixels = 240};
 strand_t * STRANDS [] = { &strand };
 int STRANDCNT = COUNT_OF(STRANDS); 
 #pragma GCC diagnostic pop
@@ -77,6 +81,9 @@ int STRANDCNT = COUNT_OF(STRANDS);
 void setup(){
 
     Serial.begin(115200);
+
+	pinMode(relay_gpio, OUTPUT);
+    digitalWrite(relay_gpio, HIGH);
 
     digitalLeds_initDriver();
     // Init unused outputs low to reduce noise
@@ -221,6 +228,13 @@ void http_server(void *client)
 
 									if(key == "state"){
 										state = value;
+									}else if(key == "relay"){
+										relay = value;
+										if(relay==1){
+											digitalWrite(relay_gpio, LOW);
+										}else{
+											digitalWrite(relay_gpio, HIGH);
+										}
 									}else if(key == "type"){
 										type = value;
 									}else if(key == "lednum"){
@@ -262,6 +276,12 @@ void http_server(void *client)
 								client.println("<p><a href='/state/0' class='btn btn-success state col-md-1 col-lg-10'>开</a></p>");
 							} else {
 								client.println("<p><a href='/state/1' class='btn btn-danger state col-md-1 col-lg-10'>关</a></p>");
+							}
+
+							if (relay==1) {
+								client.println("<p><a href='/relay/0' class='btn btn-success state col-md-1 col-lg-10'>关灯</a></p>");
+							} else {
+								client.println("<p><a href='/relay/1' class='btn btn-danger state col-md-1 col-lg-10'>开灯</a></p>");
 							}
 
 							client.println("<p>&nbsp;</p><p>彩虹</p>");
